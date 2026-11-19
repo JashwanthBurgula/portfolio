@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #050505;
+  --warm-white: #F2F0EB;
+  --signal-red: #FF3B30;
+  --electric-cyan: #22D3EE;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: auto; }
+
+body {
+  background: var(--bg);
+  color: var(--warm-white);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+::selection { background: var(--electric-cyan); color: #000; }
+
+/* Custom cursor */
+#cursor-dot {
+  position: fixed; top: 0; left: 0; z-index: 9999;
+  width: 6px; height: 6px;
+  background: var(--electric-cyan);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s, background 0.2s;
+  mix-blend-mode: screen;
+}
+
+#cursor-ring {
+  position: fixed; top: 0; left: 0; z-index: 9998;
+  width: 32px; height: 32px;
+  border: 1.5px solid rgba(34,211,238,0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s cubic-bezier(.4,0,.2,1), height 0.3s, border-color 0.3s, transform 0.1s;
+}
+
+#cursor-ring.ring  { width: 48px; height: 48px; border-color: var(--electric-cyan); }
+#cursor-ring.magnify { width: 56px; height: 56px; border-color: var(--signal-red); }
+#cursor-ring.drag  { width: 64px; height: 64px; border-color: var(--warm-white); }
+#cursor-ring.open  { width: 72px; height: 72px; border-color: var(--electric-cyan); }
+
+/* Film grain overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9000;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  animation: grain 0.5s steps(1) infinite;
+}
+
+@keyframes grain {
+  0%  { background-position: 0 0; }
+  10% { background-position: -5% -10%; }
+  20% { background-position: -15% 5%; }
+  30% { background-position: 7% -25%; }
+  40% { background-position: -5% 25%; }
+  50% { background-position: -15% 10%; }
+  60% { background-position: 15% 0%; }
+  70% { background-position: 0% 15%; }
+  80% { background-position: 3% 35%; }
+  90% { background-position: -10% 10%; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: var(--electric-cyan); border-radius: 2px; }
+
+/* Section progress rail */
+#progress-rail {
+  position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+  z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+
+.progress-dot {
+  width: 4px; height: 4px; border-radius: 50%; background: rgba(242,240,235,0.2);
+  transition: all 0.4s;
+}
+.progress-dot.active { background: var(--electric-cyan); transform: scaleX(2.5); border-radius: 2px; }
+
+/* Bujji mode */
+.bujji-mode { --warm-white: #22D3EE; --bg: #001a1a; }
+
+/* Light mode overrides */
+.light { --bg: #FAFAF8; --warm-white: #111111; }
+.light body { background: #FAFAF8; color: #111111; }
+
+/* Section common */
+section { position: relative; }
+
+/* Utility */
+.font-dot { font-family: 'DotGothic16', monospace; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.text-gradient {
+  background: linear-gradient(135deg, var(--electric-cyan), var(--signal-red));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+/* Magnetic button */
+.magnetic-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  body::after { display: none; }
+}
+
+/* Canvas overlay fade */
+.canvas-fade { transition: opacity 0.6s; }
+
+/* Typewriter cursor */
+.tw-cursor::after { content: '|'; animation: blink 1s step-end infinite; color: var(--electric-cyan); }
+
+@keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0 } }
