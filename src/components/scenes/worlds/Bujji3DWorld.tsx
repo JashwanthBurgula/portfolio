@@ -1,291 +1,317 @@
-import { useRef, useState, useEffect, useMemo } from 'react'
+import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { Float, Environment, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
 interface BujjiWorldProps {
-  onRoute?: (agent: string) => void
+  step: 'problem' | 'build' | 'result'
+  audioLevel?: number
 }
 
 const AGENTS = [
-  { id: 'vosk', name: 'Vosk (<3% CPU)', icon: '🎙️', tier: 'Wake Word' },
-  { id: 'whisper', name: 'Whisper STT', icon: '📝', tier: 'Speech' },
-  { id: 'codeforge', name: 'CodeForge', icon: '⚡', tier: 'Self-Healing' },
-  { id: 'vision', name: 'Vision UI Auto', icon: '👁️', tier: 'Desktop' },
-  { id: 'chroma', name: 'ChromaDB Memory', icon: '🧠', tier: 'RAG' },
-  { id: 'desktop', name: 'Desktop OS', icon: '💻', tier: 'Actions' },
-  { id: 'tts', name: 'Bilingual TTS', icon: '🔊', tier: 'Audio' },
+  { name: 'Wake', role: 'Vosk <3% CPU' },
+  { name: 'Speech', role: 'Whisper STT' },
+  { name: 'Router', role: '3-Tier LLM' },
+  { name: 'Vision', role: 'UI Perception' },
+  { name: 'Automation', role: 'PyAutoGUI' },
+  { name: 'CodeForge', role: 'Self-Healing' },
+  { name: 'Memory', role: 'ChromaDB' },
 ]
 
-// Holographic audio-reactive orb in 3D
-function HolographicAudioOrb({ audioLevel }: { audioLevel: number }) {
-  const meshRef = useRef<THREE.Mesh>(null)
-  const outerRingRef = useRef<THREE.Group>(null)
+function BujjiVisual({ step, audioLevel = 0 }: BujjiWorldProps) {
+  const orbRef = useRef<THREE.Mesh>(null)
+  const coreRef = useRef<THREE.Mesh>(null)
+  const faceRef = useRef<THREE.Mesh>(null)
+  const mandalaRef = useRef<THREE.Group>(null)
+  const groupRef = useRef<THREE.Group>(null)
+  const nodesGroupRef = useRef<THREE.Group>(null)
+
+  // Load the authentic Bujji face holographic texture safely without blocking Suspense
+  const bujjiTexture = useMemo(() => {
+    const loader = new THREE.TextureLoader()
+    return loader.load('/bujji-face.jpg')
+  }, [])
+
+  // Physical Glass Material Props
+  const glassMaterial = useMemo(
+    () => ({
+      color: '#0d0d0d',
+      transmission: 0.9,
+      roughness: 0.08,
+      metalness: 0.15,
+      ior: 1.5,
+      thickness: 0.6,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08,
+      transparent: true,
+      opacity: 0.9,
+    }),
+    []
+  )
 
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.5
-      meshRef.current.rotation.x += delta * 0.3
-      const scale = 1.0 + audioLevel * 0.45 + Math.sin(state.clock.elapsedTime * 3) * 0.05
-      meshRef.current.scale.set(scale, scale, scale)
+    const isProblem = step === 'problem'
+    const isBuild = step === 'build'
+    const isResult = step === 'result'
+
+    // Rotation speeds
+    const rotSpeed = isProblem ? 0.05 : isBuild ? 0.25 : 0.6
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * rotSpeed
     }
-    if (outerRingRef.current) {
-      outerRingRef.current.rotation.z -= delta * 0.6
-      outerRingRef.current.rotation.y += delta * 0.4
+
+    if (nodesGroupRef.current) {
+      nodesGroupRef.current.rotation.y -= delta * (isProblem ? 0.03 : 0.4)
+    }
+
+    if (mandalaRef.current) {
+      mandalaRef.current.rotation.z += delta * (isProblem ? 0.1 : 0.5)
+    }
+
+    // Bujji Face Disc Pulse
+    if (faceRef.current) {
+      const baseScale = isProblem ? 0.85 : isBuild ? 1.0 : 1.05 + audioLevel * 0.45
+      faceRef.current.scale.set(baseScale, baseScale, baseScale)
+    }
+
+    // Orb Pulse
+    if (coreRef.current) {
+      if (isProblem) {
+        coreRef.current.scale.set(0.8, 0.8, 0.8)
+      } else if (isBuild) {
+        const p = 1.0 + Math.sin(state.clock.elapsedTime * 2.5) * 0.08
+        coreRef.current.scale.set(p, p, p)
+      } else {
+        const pulse = 1.0 + audioLevel * 0.5 + Math.sin(state.clock.elapsedTime * 4.5) * 0.1
+        coreRef.current.scale.set(pulse, pulse, pulse)
+      }
     }
   })
 
-  return (
-    <group>
-      {/* Central pulsating core */}
-      <mesh ref={meshRef}>
-        <icosahedronGeometry args={[0.85, 2]} />
-        <meshStandardMaterial
-          color="#22D3EE"
-          wireframe
-          emissive="#22D3EE"
-          emissiveIntensity={1.5 + audioLevel * 2.0}
-        />
-      </mesh>
+  const isProblem = step === 'problem'
+  const isBuild = step === 'build'
+  const isResult = step === 'result'
 
-      {/* Outer audio waveform rings */}
-      <group ref={outerRingRef}>
-        <mesh>
-          <ringGeometry args={[1.2, 1.25, 32]} />
-          <meshBasicMaterial color="#FF3B30" side={THREE.DoubleSide} transparent opacity={0.7} />
+  return (
+    <group ref={groupRef}>
+      {/* Central Red Point Light */}
+      <pointLight
+        position={[0, 0, 0]}
+        color="#FF3B30"
+        intensity={isProblem ? 0.8 : isBuild ? 6 : 9 + audioLevel * 8}
+        distance={7}
+      />
+
+      {/* ── 1. BUJJI HOLOGRAPHIC 3D FACE & NEURAL CORE ── */}
+      <group position={[0, 0, 0]}>
+        {/* Forward-facing Bujji Holographic Face Disc */}
+        <mesh ref={faceRef} position={[0, 0, 1.18]}>
+          <circleGeometry args={[1.15, 64]} />
+          <meshBasicMaterial
+            map={bujjiTexture}
+            transparent
+            opacity={isProblem ? 0.6 : isBuild ? 0.95 : 1.0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
         </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[1.35, 1.4, 32]} />
-          <meshBasicMaterial color="#22D3EE" side={THREE.DoubleSide} transparent opacity={0.5} />
+
+        {/* Front Glowing Crimson Rim Ring */}
+        <mesh position={[0, 0, 1.19]}>
+          <torusGeometry args={[1.16, 0.022, 16, 64]} />
+          <meshStandardMaterial
+            color="#FF3B30"
+            emissive="#FF3B30"
+            emissiveIntensity={isProblem ? 0.5 : 3.2 + audioLevel * 3.5}
+          />
         </mesh>
+
+        {/* Backward-facing Bujji Holographic Face Disc (for 360 rotation visibility) */}
+        <mesh position={[0, 0, -1.18]} rotation={[0, Math.PI, 0]}>
+          <circleGeometry args={[1.15, 64]} />
+          <meshBasicMaterial
+            map={bujjiTexture}
+            transparent
+            opacity={isProblem ? 0.6 : isBuild ? 0.95 : 1.0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        {/* Back Glowing Crimson Rim Ring */}
+        <mesh position={[0, 0, -1.19]}>
+          <torusGeometry args={[1.16, 0.022, 16, 64]} />
+          <meshStandardMaterial
+            color="#FF3B30"
+            emissive="#FF3B30"
+            emissiveIntensity={isProblem ? 0.5 : 3.2 + audioLevel * 3.5}
+          />
+        </mesh>
+
+        {/* Rotating Sacred Mandala Rings around Face */}
+        <group ref={mandalaRef}>
+          <mesh rotation={[0, 0, 0]}>
+            <torusGeometry args={[1.22, 0.02, 16, 64]} />
+            <meshStandardMaterial
+              color="#FF3B30"
+              emissive="#FF3B30"
+              emissiveIntensity={isProblem ? 0.4 : 2.5 + audioLevel * 3}
+            />
+          </mesh>
+          <mesh rotation={[0, 0, Math.PI / 4]}>
+            <torusGeometry args={[1.28, 0.012, 16, 64]} />
+            <meshStandardMaterial
+              color="#F5F3EE"
+              emissive="#F5F3EE"
+              emissiveIntensity={isProblem ? 0.2 : 1.6}
+            />
+          </mesh>
+        </group>
+
+        {/* Inner Glowing Red Core */}
+        <mesh ref={coreRef}>
+          <sphereGeometry args={[0.5, 32, 32]} />
+          <meshStandardMaterial
+            color="#FF3B30"
+            emissive="#FF3B30"
+            emissiveIntensity={isProblem ? 0.3 : isBuild ? 2.5 : 4.0 + audioLevel * 3}
+            roughness={0.2}
+            transparent
+            opacity={0.65}
+          />
+        </mesh>
+
+        {/* Outer Smoked Glass Sphere Enclosure */}
+        <mesh ref={orbRef}>
+          <sphereGeometry args={[1.15, 48, 48]} />
+          <meshPhysicalMaterial {...glassMaterial} />
+        </mesh>
+
+        {/* Chrome Gimbal Rings */}
+        <mesh rotation={[Math.PI / 3, 0, 0]}>
+          <torusGeometry args={[1.45, 0.02, 16, 64]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            metalness={0.98}
+            roughness={0.06}
+            envMapIntensity={2.0}
+          />
+        </mesh>
+      </group>
+
+      {/* 2. THREE-TIER ROUTING FUNNEL (Visible during Step 2: BUILD and Step 3) */}
+      {(isBuild || isResult) && (
+        <group position={[0, -1.3, 0]}>
+          {/* Tier 1: Rules */}
+          <mesh position={[0, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.9, 0.015, 16, 48]} />
+            <meshStandardMaterial color="#FF3B30" emissive="#FF3B30" emissiveIntensity={2} />
+          </mesh>
+          <Text position={[1.2, 0.4, 0]} fontSize={0.08} color="#FF3B30">
+            TIER 1: RULES ENGINE
+          </Text>
+
+          {/* Tier 2: Qwen2.5 */}
+          <mesh position={[0, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.65, 0.015, 16, 48]} />
+            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.5} />
+          </mesh>
+          <Text position={[1.0, 0.15, 0]} fontSize={0.08} color="#ffffff">
+            TIER 2: QWEN 2.5 (LOCAL)
+          </Text>
+
+          {/* Tier 3: Gemini Cloud */}
+          <mesh position={[0, -0.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.4, 0.015, 16, 48]} />
+            <meshStandardMaterial color="#FF3B30" emissive="#FF3B30" emissiveIntensity={2.5} />
+          </mesh>
+          <Text position={[0.75, -0.1, 0]} fontSize={0.08} color="#FF3B30">
+            TIER 3: GEMINI (FALLBACK)
+          </Text>
+        </group>
+      )}
+
+      {/* 3. SEVEN ORBITING GLASS AGENT NODES */}
+      <group ref={nodesGroupRef}>
+        {AGENTS.map((agent, i) => {
+          const angle = (i / AGENTS.length) * Math.PI * 2
+          const radius = 2.1
+          const x = Math.cos(angle) * radius
+          const z = Math.sin(angle) * radius
+          const y = Math.sin(angle * 2) * 0.25
+
+          return (
+            <group key={agent.name} position={[x, y, z]}>
+              {/* Node Glass Sphere */}
+              <mesh>
+                <sphereGeometry args={[0.16, 20, 20]} />
+                <meshPhysicalMaterial
+                  {...glassMaterial}
+                  color={isProblem ? '#333333' : '#ffffff'}
+                />
+              </mesh>
+
+              {/* Glowing Inner Center */}
+              <mesh>
+                <sphereGeometry args={[0.065, 12, 12]} />
+                <meshStandardMaterial
+                  color="#FF3B30"
+                  emissive="#FF3B30"
+                  emissiveIntensity={isProblem ? 0.1 : 3.0}
+                />
+              </mesh>
+
+              {/* Connecting Laser Line to Core */}
+              {(isBuild || isResult) && (
+                <line>
+                  <bufferGeometry
+                    attach="geometry"
+                    {...new THREE.BufferGeometry().setFromPoints([
+                      new THREE.Vector3(0, 0, 0),
+                      new THREE.Vector3(-x * 0.55, -y * 0.55, -z * 0.55),
+                    ])}
+                  />
+                  <lineBasicMaterial color="#FF3B30" transparent opacity={0.4} />
+                </line>
+              )}
+
+              {/* Node Label */}
+              <Text
+                position={[0, 0.26, 0]}
+                fontSize={0.08}
+                color={isProblem ? '#777777' : '#F5F3EE'}
+                anchorX="center"
+                anchorY="middle"
+              >
+                {agent.name}
+              </Text>
+            </group>
+          )
+        })}
       </group>
     </group>
   )
 }
 
-// 7 Orbiting Agent Nodes in 3D
-function OrbitingAgentsGroup({ activeAgentId }: { activeAgentId: string | null }) {
-  const groupRef = useRef<THREE.Group>(null)
-
-  useFrame((_, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.25
-    }
-  })
-
+export default function Bujji3DWorld({ step, audioLevel = 0 }: BujjiWorldProps) {
   return (
-    <group ref={groupRef}>
-      {AGENTS.map((agent, i) => {
-        const angle = (i / AGENTS.length) * Math.PI * 2
-        const r = 2.1
-        const x = Math.cos(angle) * r
-        const z = Math.sin(angle) * r
-        const isActive = activeAgentId === agent.id
+    <div className="w-full h-full min-h-[420px] relative select-none">
+      <Canvas
+        camera={{ position: [0, 0.2, 4.4], fov: 46 }}
+        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      >
+        <Environment preset="night" />
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[4, 5, 4]} intensity={2.2} color="#ffffff" />
+        <directionalLight position={[-4, -3, -3]} intensity={1.5} color="#FF3B30" />
 
-        return (
-          <group key={agent.id} position={[x, Math.sin(angle * 2) * 0.35, z]}>
-            <mesh scale={isActive ? 1.4 : 1.0}>
-              <sphereGeometry args={[0.16, 16, 16]} />
-              <meshStandardMaterial
-                color={isActive ? '#FF3B30' : '#22D3EE'}
-                emissive={isActive ? '#FF3B30' : '#22D3EE'}
-                emissiveIntensity={isActive ? 3.0 : 1.2}
-              />
-            </mesh>
-            {/* Pulsing halo */}
-            {isActive && (
-              <mesh>
-                <ringGeometry args={[0.22, 0.28, 16]} />
-                <meshBasicMaterial color="#FF3B30" side={THREE.DoubleSide} />
-              </mesh>
-            )}
-          </group>
-        )
-      })}
-    </group>
-  )
-}
-
-export default function Bujji3DWorld() {
-  const [audioLevel, setAudioLevel] = useState(0.2)
-  const [activeAgent, setActiveAgent] = useState<string | null>('codeforge')
-  const [currentTier, setCurrentTier] = useState<number>(2) // 0: Rules, 1: Qwen2.5, 2: Gemini
-  const [language, setLanguage] = useState<'EN' | 'TE'>('EN')
-  const [caption, setCaption] = useState<string>('Say "Hey Bujji" or test a command below')
-  const [listening, setListening] = useState(false)
-
-  // Real or synthetic Web Audio API handler
-  const startMic = async () => {
-    try {
-      setListening(true)
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-      const source = audioCtx.createMediaStreamSource(stream)
-      const analyser = audioCtx.createAnalyser()
-      analyser.fftSize = 64
-      source.connect(analyser)
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount)
-      const checkAudio = () => {
-        analyser.getByteFrequencyData(dataArray)
-        let sum = 0
-        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i]
-        const avg = sum / dataArray.length
-        setAudioLevel(avg / 128)
-        requestAnimationFrame(checkAudio)
-      }
-      checkAudio()
-      setCaption(language === 'EN' ? 'Listening via real microphone... "Hey Bujji!"' : 'మైక్రోఫోన్ ద్వారా వింటున్నాను... "హే బుజ్జి!"')
-    } catch {
-      // Synthetic fallback
-      setListening(true)
-      const interval = setInterval(() => {
-        setAudioLevel(0.3 + Math.random() * 0.6)
-      }, 100)
-      setCaption(language === 'EN' ? 'Simulating speech input... "Hey Bujji, fix bug in agent.py"' : 'వాయిస్ ఇన్పుట్ పరీక్షిస్తున్నాం... "బుజ్జి, కోడ్ సరిచేయి"')
-      setTimeout(() => {
-        clearInterval(interval)
-        setAudioLevel(0.2)
-        setListening(false)
-      }, 4000)
-    }
-  }
-
-  const triggerCommand = (cmd: string, targetAgent: string, tier: number, teText: string) => {
-    setActiveAgent(targetAgent)
-    setCurrentTier(tier)
-    setAudioLevel(0.8)
-    setCaption(language === 'EN' ? `Routing: "${cmd}"` : `రూట్ చేస్తోంది: "${teText}"`)
-    setTimeout(() => setAudioLevel(0.2), 1500)
-  }
-
-  return (
-    <div className="relative w-full h-[460px] bg-black/60 border border-cyan-500/30 rounded-sm overflow-hidden flex flex-col justify-between p-4">
-      {/* Top HUD Bar */}
-      <div className="flex justify-between items-center z-10 border-b border-white/10 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="font-mono text-xs font-bold text-cyan-400 tracking-wider">BUJJI AI HOLOGRAPHIC CORE</span>
-          <span className="font-mono text-[9px] px-1.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700/50">
-            VOSK &lt;3% CPU
-          </span>
-        </div>
-
-        {/* Language switch */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => {
-              setLanguage('EN')
-              setCaption('Switched to English captions')
-            }}
-            className={`font-mono text-[10px] px-2 py-0.5 border ${
-              language === 'EN' ? 'border-cyan-400 text-cyan-300 bg-cyan-900/40' : 'border-white/10 text-white/30'
-            }`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => {
-              setLanguage('TE')
-              setCaption('తెలుగు సంభాషణ ఆన్ చేయబడింది')
-            }}
-            className={`font-mono text-[10px] px-2 py-0.5 border ${
-              language === 'TE' ? 'border-cyan-400 text-cyan-300 bg-cyan-900/40' : 'border-white/10 text-white/30'
-            }`}
-          >
-            తెలుగు (TE)
-          </button>
-        </div>
-      </div>
-
-      {/* 3D Canvas Center */}
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 4.2], fov: 45 }} dpr={[1, 2]}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[0, 0, 3]} intensity={2.0} color="#22D3EE" />
-          <pointLight position={[3, 2, 2]} intensity={1.5} color="#FF3B30" />
-          <HolographicAudioOrb audioLevel={audioLevel} />
-          <OrbitingAgentsGroup activeAgentId={activeAgent} />
-        </Canvas>
-      </div>
-
-      {/* 3-Tier LLM Funnel Overlay (Right edge) */}
-      <div className="absolute top-16 right-4 z-10 flex flex-col gap-1.5 text-right pointer-events-none">
-        <span className="font-mono text-[8px] text-white/40 uppercase tracking-widest">3-Tier Routing Funnel</span>
-        {[
-          { tier: 0, label: 'Tier 1: Rules & Regex (<10ms)' },
-          { tier: 1, label: 'Tier 2: Qwen2.5 7B (Local RAG)' },
-          { tier: 2, label: 'Tier 3: Gemini Pro (Complex Code)' },
-        ].map((t) => (
-          <div
-            key={t.tier}
-            className={`font-mono text-[9px] px-2 py-1 rounded transition-all ${
-              currentTier === t.tier
-                ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-400 shadow-[0_0_10px_#22D3EE50]'
-                : 'text-white/30'
-            }`}
-          >
-            {t.label}
-          </div>
-        ))}
-      </div>
-
-      {/* Orbiting Agent Labels Legend (Left edge) */}
-      <div className="absolute top-16 left-4 z-10 flex flex-col gap-1 text-left pointer-events-none">
-        <span className="font-mono text-[8px] text-white/40 uppercase tracking-widest">7-Agent Swarm</span>
-        {AGENTS.map((a) => (
-          <div
-            key={a.id}
-            className={`font-mono text-[9px] transition-all flex items-center gap-1 ${
-              activeAgent === a.id ? 'text-cyan-300 font-bold translate-x-1' : 'text-white/20'
-            }`}
-          >
-            <span>{a.icon}</span>
-            <span>{a.name}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Bottom Controls & Dynamic Captions */}
-      <div className="z-10 bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-sm space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="font-mono text-xs text-cyan-300 truncate max-w-[70%]">
-            &gt; {caption}
-          </div>
-          <button
-            onClick={startMic}
-            className={`px-3 py-1 font-mono text-xs font-bold border transition-all ${
-              listening
-                ? 'bg-red-500 text-white border-red-400 animate-pulse'
-                : 'border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-black'
-            }`}
-          >
-            {listening ? '● LISTENING' : '🎙️ SAY "HEY BUJJI"'}
-          </button>
-        </div>
-
-        {/* Demo command triggers */}
-        <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/5">
-          <span className="font-mono text-[8px] text-white/30 flex items-center pr-1">TRY PROMPT:</span>
-          <button
-            onClick={() => triggerCommand('CodeForge: Auto-heal syntax error in agent.py', 'codeforge', 2, 'కోడ్‌ఫోర్జ్: agent.py లో సింటాక్స్ ఎర్రర్ రిపేర్ చేయి')}
-            className="font-mono text-[9px] px-2 py-0.5 border border-white/10 text-white/60 hover:border-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            ⚡ CodeForge Self-Heal
-          </button>
-          <button
-            onClick={() => triggerCommand('Vosk wake word: CPU load check', 'vosk', 0, 'వాస్క్ వేక్ వర్డ్: CPU వినియోగం తనిఖీ')}
-            className="font-mono text-[9px] px-2 py-0.5 border border-white/10 text-white/60 hover:border-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            📉 &lt;3% CPU Vosk Test
-          </button>
-          <button
-            onClick={() => triggerCommand('UI Vision: Extract table from active window', 'vision', 1, 'UI విజన్: యాక్టివ్ విండో నుండి డేటా తీయి')}
-            className="font-mono text-[9px] px-2 py-0.5 border border-white/10 text-white/60 hover:border-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            👁️ Vision UI Automation
-          </button>
-        </div>
-      </div>
+        <Float speed={1.6} rotationIntensity={0.2} floatIntensity={0.3}>
+          <BujjiVisual step={step} audioLevel={audioLevel} />
+        </Float>
+      </Canvas>
     </div>
   )
 }

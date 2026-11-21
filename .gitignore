@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary dev reference media
+public/ref*
+public/ref_video_lamp/
+public/*_concept*
+

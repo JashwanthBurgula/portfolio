@@ -1,18 +1,13 @@
-'use client'
-
 import { useEffect } from 'react'
 import { useStore } from '@/store'
+import { sound } from '@/utils/sound'
 
 const SECTIONS = [
-  { id: 'hero', label: '01 HERO' },
-  { id: 'about', label: '02 ABOUT' },
-  { id: 'what-i-build', label: '03 WHAT I BUILD' },
-  { id: 'work', label: '04 WORK' },
-  { id: 'skills', label: '05 SKILLS' },
-  { id: 'journey', label: '06 JOURNEY' },
-  { id: 'certifications', label: '07 CERTS' },
-  { id: 'break-it', label: '08 STRESS' },
-  { id: 'contact', label: '09 CONTACT' },
+  { id: 'hero', label: '01 OVERVIEW', num: '01' },
+  { id: 'about', label: '02 ABOUT', num: '02' },
+  { id: 'what-i-build', label: '03 CAPABILITIES', num: '03' },
+  { id: 'systems', label: '04 SYSTEMS', num: '04' },
+  { id: 'contact', label: '05 CONTACT', num: '05' },
 ]
 
 export default function ProgressRail() {
@@ -27,7 +22,7 @@ export default function ProgressRail() {
         const el = document.getElementById(s.id)
         if (el) {
           const rect = el.getBoundingClientRect()
-          if (rect.top <= viewH * 0.45) active = i
+          if (rect.top <= viewH * 0.5) active = i
         }
       })
       setSection(active)
@@ -41,7 +36,7 @@ export default function ProgressRail() {
   return (
     <div
       id="progress-rail"
-      className="fixed right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-end gap-2.5 pointer-events-auto"
+      className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col items-end gap-3.5 pointer-events-auto select-none"
     >
       {SECTIONS.map((s, i) => {
         const isActive = section === i
@@ -50,19 +45,32 @@ export default function ProgressRail() {
             key={s.id}
             href={`#${s.id}`}
             aria-label={`Go to section ${s.label}`}
-            className="group flex items-center gap-2 cursor-pointer"
+            onMouseEnter={() => sound.playHover()}
+            onClick={() => sound.playClick()}
+            className="group flex items-center gap-2.5 cursor-pointer"
           >
             {/* Tooltip on hover */}
-            <span className="font-mono text-[9px] text-electric-cyan opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-black/80 px-1.5 py-0.5 border border-electric-cyan/30 rounded-xs">
+            <span className="font-mono text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-[#090A0E]/95 px-2.5 py-0.5 border border-white/15 rounded-xs tracking-wider shadow-md">
               {s.label}
             </span>
-            <span
-              className={`block rounded-full transition-all duration-300 ${
-                isActive
-                  ? 'w-1.5 h-6 bg-electric-cyan shadow-[0_0_10px_2px_#22D3EE]'
-                  : 'w-1.5 h-1.5 bg-white/20 group-hover:bg-white/60'
-              }`}
-            />
+
+            {/* Indicator pill/dot */}
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-[11px] transition-colors duration-300 ${
+                  isActive ? 'text-white font-bold' : 'text-white/20 group-hover:text-white/50'
+                }`}
+              >
+                {s.num}
+              </span>
+              <span
+                className={`block rounded-full transition-all duration-300 ${
+                  isActive
+                    ? 'w-2 h-5 bg-white shadow-[0_0_10px_#ffffff]'
+                    : 'w-1.5 h-1.5 bg-white/15 group-hover:bg-white/40'
+                }`}
+              />
+            </div>
           </a>
         )
       })}

@@ -1,65 +1,80 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { useStore } from '@/store'
-import { useKonamiCode, useTabVisibility } from '@/hooks/useEasterEggs'
 import { useCursorTracker } from '@/hooks/useCursor'
 import { useLenisSmoothScroll } from '@/hooks/useLenisSmoothScroll'
 import CustomCursor from '@/components/ui/CustomCursor'
 import Navbar from '@/components/ui/Navbar'
 import ProgressRail from '@/components/ui/ProgressRail'
-import ScrollCounter from '@/components/ui/ScrollCounter'
+import TechBand from '@/components/ui/TechBand'
+import LampPullCord from '@/components/ui/LampPullCord'
 import Preloader from '@/components/sections/Preloader'
-import BreakItGlitchZone from '@/components/ui/BreakItGlitchZone'
 
-// Lazy-load heavy sections
+// Lazy-load sections for Phase 2 & Phase 3
 const Hero = lazy(() => import('@/components/sections/Hero'))
 const About = lazy(() => import('@/components/sections/About'))
 const WhatIBuild = lazy(() => import('@/components/sections/WhatIBuild'))
-const Work = lazy(() => import('@/components/sections/Work'))
-const Skills = lazy(() => import('@/components/sections/Skills'))
-const Journey = lazy(() => import('@/components/sections/Journey'))
-const Certifications = lazy(() => import('@/components/sections/Certifications'))
+const ProductionSystems = lazy(() => import('@/components/sections/ProductionSystems'))
 const Contact = lazy(() => import('@/components/sections/Contact'))
 
 export default function App() {
-  const { preloaderDone, theme, bujjiMode } = useStore()
+  const { theme, preloaderDone } = useStore()
 
-  useKonamiCode()
-  useTabVisibility()
+  // Custom cursor tracking & Lenis smooth scroll
   useCursorTracker()
   useLenisSmoothScroll()
 
+  // Sync theme with document element for CSS selectors
   useEffect(() => {
-    if (bujjiMode) {
-      document.body.classList.add('bujji-mode')
+    document.documentElement.setAttribute('data-theme', theme)
+    if (theme === 'light') {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
     } else {
-      document.body.classList.remove('bujji-mode')
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
     }
-  }, [bujjiMode])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('light', theme === 'light')
-    document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
   return (
-    <div className={`min-h-screen bg-bg text-warm-white ${bujjiMode ? 'bujji-mode' : ''}`}>
+    <div
+      className={`min-h-screen transition-colors duration-500 ${
+        theme === 'light'
+          ? 'light bg-[#F5F4F0] text-[#0F172A]'
+          : 'dark bg-[#090A0E] text-[#F8FAFC]'
+      } selection:bg-black/20 selection:text-black`}
+    >
+      {/* Custom Cursor */}
       <CustomCursor />
+
+      {/* Hanging Lamp Pull-Cord (Light/Dark Mode Interactive Thread) */}
+      <LampPullCord />
+
+      {/* Preloader */}
       {!preloaderDone && <Preloader />}
+
+      {/* Main Experience once preloader finishes */}
       {preloaderDone && (
         <>
           <Navbar />
           <ProgressRail />
-          <ScrollCounter />
-          <Suspense fallback={<div className="h-screen bg-bg" />}>
+          <Suspense fallback={<div className="h-screen" />}>
             <main>
+              {/* 01: Executive Hero */}
               <Hero />
+
+              {/* 02: Intro / Engineering Dossier */}
               <About />
+
+              {/* Infinite Tech Marquee Band */}
+              <TechBand />
+
+              {/* 03: What I Build / Capabilities (CAN DO) */}
               <WhatIBuild />
-              <Work />
-              <Skills />
-              <Journey />
-              <Certifications />
-              <BreakItGlitchZone />
+
+              {/* 04: Production Systems & Live Architecture Suite */}
+              <ProductionSystems />
+
+              {/* 05: Contact Dossier ("LET'S BUILD INTELLIGENT SYSTEMS.") */}
               <Contact />
             </main>
           </Suspense>
